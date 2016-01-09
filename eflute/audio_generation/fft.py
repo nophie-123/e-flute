@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def _fft_numpy(data, sampling_frequency):
@@ -36,29 +37,28 @@ def _fft_numpy(data, sampling_frequency):
 
 def fft(data):
     frame_rate = data["frame_rate"].mean()
-    fft_left = _fft_numpy(data["left"], frame_rate)
-    fft_right = _fft_numpy(data["right"], frame_rate)
-
-    fft_joined = fft_left.join(fft_right, lsuffix="_left", rsuffix="_right", how="inner")
-    fft_joined["Frequency"] = 0.5 * (fft_joined["Frequency_left"] + fft_joined["Frequency_right"])
-    del fft_joined["Frequency_left"]
-    del fft_joined["Frequency_right"]
-
-    return fft_joined
+    return _fft_numpy(data["left"], frame_rate)
 
 
-def heatmap(sound_data):
-    def loader(size, delta=2500):
-        for x in xrange(0, size, delta):
-            data = sound_data[x:x + delta]
-            fft_data = fft(data)
-            tmp = fft_data[["Frequency", "FFT_Power_left"]].copy()
-            tmp["x"] = x
-            yield tmp
+def get_windowed_data(sound_data, delta=2500):
+    size = len(sound_data)
+    for x in xrange(0, size, delta):
+        data_middle = sound_data[x:x + delta]
+        data_left = 0.5 * sound_data[x-delta:x]
+        data_right = 0.5 * sound_data[x+delta:x+2*delta]
 
+        data = pd.concat([data_left, data_middle, data_right])
+
+        fft_data = fft(data)
+        tmp = fft_data[["Frequency", "FFT_Power"]].copy()
+        tmp["x"] = x
+        yield tmp
+
+
+def heatmap(sound_data, n_cuts_frequency=50, n_cuts_time=30, max_frequency=2500):
     number_of_datapoints = len(sound_data)
-    tmp = pd.concat(list(loader(number_of_datapoints, int(number_of_datapoints/30.0))))
+    windowed_data = get_windowed_data(sound_data, int(1.0 * number_of_datapoints / n_cuts_time))
+    tmp = pd.concat(list(windowed_data))
+    tmp["Frequency_short"] = pd.cut(tmp.Frequency, np.arange(0, max_frequency, 1.0 * max_frequency/n_cuts_frequency))
 
-    tmp["Frequency_short"] = pd.cut(tmp.Frequency, np.arange(0, 2500, 50))
-
-    return tmp.groupby(["Frequency_short", "x"]).mean()["FFT_Power_left"].unstack()
+    return tmp.groupby(["Frequency_short", "x"]).mean()["FFT_Power"].unstack()
