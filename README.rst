@@ -29,7 +29,7 @@ For starting to analyse recorded sound data (for example the data shipped with t
 
 After that, you can open an IPython notebook and load the package. For example you can do:
 
-::
+.. code:: python
 
     from eflute.audio_generation import utils
     from eflute.audio_generation import fft
