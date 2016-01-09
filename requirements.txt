@@ -1,3 +1,4 @@
+pandas
 setuptools>=9.0
 numpy
 audiogen==0.1.1
