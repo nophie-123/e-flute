@@ -1,3 +1,5 @@
+scipy
+Cython
 pandas
 setuptools>=9.0
 numpy
