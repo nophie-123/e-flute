@@ -1,10 +1,12 @@
-import numpy as np
-from scipy.signal import resample, blackmanharris, triang
-from scipy.fftpack import fft, ifft, fftshift
-import math, copy, sys, os
-from scipy.io.wavfile import write, read
-from sys import platform
+import copy
+import os
 import subprocess
+import sys
+
+import numpy as np
+from scipy.fftpack import fft, ifft, fftshift
+from scipy.io.wavfile import write, read
+from scipy.signal import resample, blackmanharris, triang
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), './utilFunctions_C/'))
 try:
@@ -32,8 +34,8 @@ if sys.platform == "win32":
 
 def isPower2(num):
     """
-	Check if num is power of two
-	"""
+    Check if num is power of two
+    """
     return ((num & (num - 1)) == 0) and num > 0
 
 
@@ -45,10 +47,10 @@ norm_fact = {'int16': INT16_FAC, 'int32': INT32_FAC, 'int64': INT64_FAC, 'float3
 
 def wavread(filename):
     """
-	Read a sound file and convert it to a normalized floating point array
-	filename: name of file to read
-	returns fs: sampling rate of file, x: floating point array
-	"""
+    Read a sound file and convert it to a normalized floating point array
+    filename: name of file to read
+    returns fs: sampling rate of file, x: floating point array
+    """
 
     if (os.path.isfile(filename) == False):  # raise error if wrong input file
         raise ValueError("Input file is wrong")
@@ -68,9 +70,9 @@ def wavread(filename):
 
 def wavplay(filename):
     """
-	Play a wav audio file from system using OS calls
-	filename: name of file to read
-	"""
+    Play a wav audio file from system using OS calls
+    filename: name of file to read
+    """
     if (os.path.isfile(filename) == False):  # raise error if wrong input file
         print("Input file does not exist. Make sure you computed the analysis/synthesis")
     else:
@@ -92,10 +94,10 @@ def wavplay(filename):
 
 def wavwrite(y, fs, filename):
     """
-	Write a sound file from an array with the sound and the sampling rate
-	y: floating point array of one dimension, fs: sampling rate
-	filename: name of file to create
-	"""
+    Write a sound file from an array with the sound and the sampling rate
+    y: floating point array of one dimension, fs: sampling rate
+    filename: name of file to create
+    """
 
     x = copy.deepcopy(y)  # copy array
     x *= INT16_FAC  # scaling floating point -1 to 1 range signal to int16 range
@@ -105,10 +107,10 @@ def wavwrite(y, fs, filename):
 
 def peakDetection(mX, t):
     """
-	Detect spectral peak locations
-	mX: magnitude spectrum, t: threshold
-	returns ploc: peak locations
-	"""
+    Detect spectral peak locations
+    mX: magnitude spectrum, t: threshold
+    returns ploc: peak locations
+    """
 
     thresh = np.where(mX[1:-1] > t, mX[1:-1], 0);  # locations above threshold
     next_minor = np.where(mX[1:-1] > mX[2:], mX[1:-1], 0)  # locations higher than the next one
@@ -120,10 +122,10 @@ def peakDetection(mX, t):
 
 def peakInterp(mX, pX, ploc):
     """
-	Interpolate peak values using parabolic interpolation
-	mX, pX: magnitude and phase spectrum, ploc: locations of peaks
-	returns iploc, ipmag, ipphase: interpolated peak location, magnitude and phase values
-	"""
+    Interpolate peak values using parabolic interpolation
+    mX, pX: magnitude and phase spectrum, ploc: locations of peaks
+    returns iploc, ipmag, ipphase: interpolated peak location, magnitude and phase values
+    """
 
     val = mX[ploc]  # magnitude of peak bin
     lval = mX[ploc - 1]  # magnitude of bin at left
@@ -136,10 +138,10 @@ def peakInterp(mX, pX, ploc):
 
 def sinc(x, N):
     """
-	Generate the main lobe of a sinc function (Dirichlet kernel)
-	x: array of indexes to compute; N: size of FFT to simulate
-	returns y: samples of the main lobe of a sinc function
-	"""
+    Generate the main lobe of a sinc function (Dirichlet kernel)
+    x: array of indexes to compute; N: size of FFT to simulate
+    returns y: samples of the main lobe of a sinc function
+    """
 
     y = np.sin(N * x / 2) / np.sin(x / 2)  # compute the sinc function
     y[np.isnan(y)] = N  # avoid NaN if x == 0
@@ -148,10 +150,10 @@ def sinc(x, N):
 
 def genBhLobe(x):
     """
-	Generate the main lobe of a Blackman-Harris window
-	x: bin positions to compute (real values)
-	returns y: main lobe os spectrum of a Blackman-Harris window
-	"""
+    Generate the main lobe of a Blackman-Harris window
+    x: bin positions to compute (real values)
+    returns y: main lobe os spectrum of a Blackman-Harris window
+    """
 
     N = 512  # size of fft to use
     f = x * np.pi * 2 / N  # frequency sampling
@@ -166,11 +168,11 @@ def genBhLobe(x):
 
 def genSpecSines(ipfreq, ipmag, ipphase, N, fs):
     """
-	Generate a spectrum from a series of sine values, calling a C function
-	ipfreq, ipmag, ipphase: sine peaks frequencies, magnitudes and phases
-	N: size of the complex spectrum to generate; fs: sampling frequency
-	returns Y: generated complex spectrum of sines
-	"""
+    Generate a spectrum from a series of sine values, calling a C function
+    ipfreq, ipmag, ipphase: sine peaks frequencies, magnitudes and phases
+    N: size of the complex spectrum to generate; fs: sampling frequency
+    returns Y: generated complex spectrum of sines
+    """
 
     Y = UF_C.genSpecSines(N * ipfreq / float(fs), ipmag, ipphase, N)
     return Y
@@ -178,11 +180,11 @@ def genSpecSines(ipfreq, ipmag, ipphase, N, fs):
 
 def genSpecSines_p(ipfreq, ipmag, ipphase, N, fs):
     """
-	Generate a spectrum from a series of sine values
-	iploc, ipmag, ipphase: sine peaks locations, magnitudes and phases
-	N: size of the complex spectrum to generate; fs: sampling rate
-	returns Y: generated complex spectrum of sines
-	"""
+    Generate a spectrum from a series of sine values
+    iploc, ipmag, ipphase: sine peaks locations, magnitudes and phases
+    N: size of the complex spectrum to generate; fs: sampling rate
+    returns Y: generated complex spectrum of sines
+    """
 
     Y = np.zeros(N, dtype=complex)  # initialize output complex spectrum
     hN = N / 2  # size of positive freq. spectrum
@@ -208,11 +210,11 @@ def genSpecSines_p(ipfreq, ipmag, ipphase, N, fs):
 
 def sinewaveSynth(freqs, amp, H, fs):
     """
-	Synthesis of one sinusoid with time-varying frequency
-	freqs, amps: array of frequencies and amplitudes of sinusoids
-	H: hop size, fs: sampling rate
-	returns y: output array sound
-	"""
+    Synthesis of one sinusoid with time-varying frequency
+    freqs, amps: array of frequencies and amplitudes of sinusoids
+    H: hop size, fs: sampling rate
+    returns y: output array sound
+    """
 
     t = np.arange(H) / float(fs)  # time array
     lastphase = 0  # initialize synthesis phase
@@ -244,10 +246,10 @@ def sinewaveSynth(freqs, amp, H, fs):
 
 def cleaningTrack(track, minTrackLength=3):
     """
-	Delete fragments of one single track smaller than minTrackLength
-	track: array of values; minTrackLength: minimum duration of tracks in number of frames
-	returns cleanTrack: array of clean values
-	"""
+    Delete fragments of one single track smaller than minTrackLength
+    track: array of values; minTrackLength: minimum duration of tracks in number of frames
+    returns cleanTrack: array of clean values
+    """
 
     nFrames = track.size  # number of frames
     cleanTrack = np.copy(track)  # copy arrat
@@ -267,13 +269,13 @@ def cleaningTrack(track, minTrackLength=3):
 
 def f0Twm(pfreq, pmag, ef0max, minf0, maxf0, f0t=0):
     """
-	Function that wraps the f0 detection function TWM, selecting the possible f0 candidates
-	and calling the function TWM with them
-	pfreq, pmag: peak frequencies and magnitudes,
-	ef0max: maximum error allowed, minf0, maxf0: minimum  and maximum f0
-	f0t: f0 of previous frame if stable
-	returns f0: fundamental frequency in Hz
-	"""
+    Function that wraps the f0 detection function TWM, selecting the possible f0 candidates
+    and calling the function TWM with them
+    pfreq, pmag: peak frequencies and magnitudes,
+    ef0max: maximum error allowed, minf0, maxf0: minimum  and maximum f0
+    f0t: f0 of previous frame if stable
+    returns f0: fundamental frequency in Hz
+    """
     if (minf0 < 0):  # raise exception if minf0 is smaller than 0
         raise ValueError("Minumum fundamental frequency (minf0) smaller than 0")
 
@@ -312,12 +314,12 @@ def f0Twm(pfreq, pmag, ef0max, minf0, maxf0, f0t=0):
 
 def TWM_p(pfreq, pmag, f0c):
     """
-	Two-way mismatch algorithm for f0 detection (by Beauchamp&Maher)
-	[better to use the C version of this function: UF_C.twm]
-	pfreq, pmag: peak frequencies in Hz and magnitudes,
-	f0c: frequencies of f0 candidates
-	returns f0, f0Error: fundamental frequency detected and its error
-	"""
+    Two-way mismatch algorithm for f0 detection (by Beauchamp&Maher)
+    [better to use the C version of this function: UF_C.twm]
+    pfreq, pmag: peak frequencies in Hz and magnitudes,
+    f0c: frequencies of f0 candidates
+    returns f0, f0Error: fundamental frequency detected and its error
+    """
 
     p = 0.5  # weighting by frequency value
     q = 1.4  # weighting related to magnitude of peaks
@@ -359,11 +361,11 @@ def TWM_p(pfreq, pmag, f0c):
 
 def sineSubtraction(x, N, H, sfreq, smag, sphase, fs):
     """
-	Subtract sinusoids from a sound
-	x: input sound, N: fft-size, H: hop-size
-	sfreq, smag, sphase: sinusoidal frequencies, magnitudes and phases
-	returns xr: residual sound
-	"""
+    Subtract sinusoids from a sound
+    x: input sound, N: fft-size, H: hop-size
+    sfreq, smag, sphase: sinusoidal frequencies, magnitudes and phases
+    returns xr: residual sound
+    """
 
     hN = N / 2  # half of fft size
     x = np.append(np.zeros(hN), x)  # add zeros at beginning to center first window at sample 0
@@ -390,12 +392,12 @@ def sineSubtraction(x, N, H, sfreq, smag, sphase, fs):
 
 def stochasticResidualAnal(x, N, H, sfreq, smag, sphase, fs, stocf):
     """
-	Subtract sinusoids from a sound and approximate the residual with an envelope
-	x: input sound, N: fft size, H: hop-size
-	sfreq, smag, sphase: sinusoidal frequencies, magnitudes and phases
-	fs: sampling rate; stocf: stochastic factor, used in the approximation
-	returns stocEnv: stochastic approximation of residual
-	"""
+    Subtract sinusoids from a sound and approximate the residual with an envelope
+    x: input sound, N: fft size, H: hop-size
+    sfreq, smag, sphase: sinusoidal frequencies, magnitudes and phases
+    fs: sampling rate; stocf: stochastic factor, used in the approximation
+    returns stocEnv: stochastic approximation of residual
+    """
 
     hN = N / 2  # half of fft size
     x = np.append(np.zeros(hN), x)  # add zeros at beginning to center first window at sample 0

@@ -28,9 +28,9 @@ def stft(x, w, N, H):
     while pin <= pend:  # while sound pointer is smaller than last sample
         # -----analysis-----
         x1 = x[pin - hM1:pin + hM2]  # select one frame of input sound
-        mX, pX = dftModel.dftAnal(x1, w, N)  # compute dft
+        mX, pX = dftModel.dft_anal(x1, w, N)  # compute dft
         # -----synthesis-----
-        y1 = dftModel.dftSynth(mX, pX, M)  # compute idft
+        y1 = dftModel.dft_synth(mX, pX, M)  # compute idft
         y[pin - hM1:pin + hM2] += H * y1  # overlap-add to generate output sound
         pin += H  # advance sound pointer
     y = np.delete(y, range(hM2))  # delete half of first window which was added in stftAnal
@@ -63,7 +63,7 @@ def stft_anal(x, w, N, H):
 
     while pin <= pend:  # while sound pointer is smaller than last sample
         x1 = x[pin - hM1:pin + hM2]  # select one frame of input sound
-        mX, pX = dftModel.dftAnal(x1, w, N)  # compute dft
+        mX, pX = dftModel.dft_anal(x1, w, N)  # compute dft
         if pin == hM1:  # if first frame create output arrays
             xmX = np.array([mX])
             xpX = np.array([pX])
@@ -86,7 +86,7 @@ def stft_synth(mY, pY, M, H):
     y = np.zeros(nFrames * H + hM1 + hM2)  # initialize output array
     pin = hM1
     for i in range(nFrames):  # iterate over all frames
-        y1 = dftModel.dftSynth(mY[i, :], pY[i, :], M)  # compute idft
+        y1 = dftModel.dft_synth(mY[i, :], pY[i, :], M)  # compute idft
         y[pin - hM1:pin + hM2] += H * y1  # overlap-add to generate output sound
         pin += H  # advance sound pointer
     y = np.delete(y, range(hM2))  # delete half of first window which was added in stftAnal
