@@ -26,7 +26,7 @@ def spsModelAnal(x, fs, w, N, H, t, minSineDur, maxnSines, freqDevOffset, freqDe
 	tfreq, tmag, tphase = SM.sineModelAnal(x, fs, w, N, H, t, maxnSines, minSineDur, freqDevOffset, freqDevSlope)
 	Ns = 512
 	xr = UF.sineSubtraction(x, Ns, H, tfreq, tmag, tphase, fs)    	# subtract sinusoids from original sound
-	stocEnv = STM.stochasticModelAnal(xr, H, H*2, stocf)            # compute stochastic model of residual
+	stocEnv = STM.stochastic_model_anal(xr, H, H * 2, stocf)            # compute stochastic model of residual
 	return tfreq, tmag, tphase, stocEnv
 
 def spsModelSynth(tfreq, tmag, tphase, stocEnv, N, H, fs):
@@ -38,7 +38,7 @@ def spsModelSynth(tfreq, tmag, tphase, stocEnv, N, H, fs):
 	"""
 
 	ys = SM.sineModelSynth(tfreq, tmag, tphase, N, H, fs)          # synthesize sinusoids
-	yst = STM.stochasticModelSynth(stocEnv, H, H*2)                # synthesize stochastic residual
+	yst = STM.stochastic_model_synth(stocEnv, H, H * 2)                # synthesize stochastic residual
 	y = ys[:min(ys.size, yst.size)]+yst[:min(ys.size, yst.size)]   # sum sinusoids and stochastic components
 	return y, ys, yst
 
