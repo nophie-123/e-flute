@@ -42,3 +42,5 @@ MANIFEST
 
 *.ipynb
 .DS_Store
+
+utilFunctions_C/cutilFunctions.c
